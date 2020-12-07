@@ -11,7 +11,7 @@ c_data <- read.csv("~/Desktop/MIT_20-21/14.33/WebScrape/loadmore_final_all.csv")
 # create the treated variable
 #data <-subset(c_data, c_data$College.Model == "Fully online" | c_data$College.Model == "Primarily in person",
 #              select=Time:Number_of_Professors)
-data <- c_data[!(c_data$College.Model == "Other" | c_data$College.Model == "Undetermined"),]
+data <- c_data[!(c_data$College.Model == "Other" | c_data$College.Model == "Undetermined") ]
 
 data$time <- as.Date(data$Time, "%m/%d/%Y")
 data$month <- month(data$time)
@@ -88,3 +88,72 @@ ggplot() + geom_line(data=data_bymonth_model,aes(x=ym,y=difficulty,group=model,c
         legend.title = element_blank(),
         legend.position = "bottom") 
 ggsave("plot_online.png", plot = p3)
+
+############################################################################################################################################
+#graphs with only two lines (pooled fully/primarily online and in per)
+############################################################################################################################################
+
+c_data <- read.csv("~/Desktop/MIT_20-21/14.33/WebScrape/loadmore_final_all.csv")
+
+
+data <- c_data[!(c_data$College.Model == "Other" | c_data$College.Model == "Undetermined" | c_data$College.Model == "Hybrid"),]
+
+data$time <- as.Date(data$Time, "%m/%d/%Y")
+data$month <- month(data$time)
+data$year <- year(data$time)
+
+data <- subset(data, as.numeric(year) > 2003)
+
+data$new_model <- factor(if_else(data$College.Model %in% c("Fully online", "Primarily online"), "Fully/Primarily Online", "Primarily-In-Person"))
+
+data_bymonth <- aggregate(x = cbind(data$Quality,data$Difficulty) , by = list(month = data$month, year = data$year, model = data$new_model), data=data, FUN=mean, na.rm=TRUE)
+names(data_bymonth) <- c("month","year", "model", "quality", "difficulty")
+
+data_bymonth %>% 
+  group_by(month,year,model) %>% 
+  summarize(quality=mean(quality)) -> data_sum_treated
+
+
+data_sum_treated$ym <- as.yearmon(paste(data_sum_treated$year, data_sum_treated$month), "%Y %m")
+
+ggplot() + geom_line(data=data_sum_treated,aes(x=ym,y=quality,group=model,color=model),
+                     size=.5,alpha=0.5) + # plot the individual lines
+  geom_vline(xintercept = as.yearmon(ymd("2020-03-10")), color = "black",size=.5) + # intervention point
+  geom_vline(xintercept = as.yearmon(ymd("2020-08-1")), color = "black",size=.5) + # intervention point
+  scale_x_yearmon() +
+  labs(title="College Quality Rankings - Monthly Aggregate",
+       subtitle="",
+       x="Time",
+       y="Quality") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "bottom") 
+ggsave("plot_pooled_online.png")
+
+
+
+##########################################repeat for difficulty #############################################################################v
+
+
+data_bymonth %>% 
+  group_by(month,year,model) %>% 
+  summarize(difficulty=mean(difficulty)) -> data_sum_treated
+
+
+data_sum_treated$ym <- as.yearmon(paste(data_sum_treated$year, data_sum_treated$month), "%Y %m")
+
+ggplot() + geom_line(data=data_sum_treated,aes(x=ym,y=difficulty,group=model,color=model),
+                     size=.5,alpha=0.5) + # plot the individual lines
+  geom_vline(xintercept = as.yearmon(ymd("2020-03-10")), color = "black",size=.5) + # intervention point
+  geom_vline(xintercept = as.yearmon(ymd("2020-08-1")), color = "black",size=.5) + # intervention point
+  scale_x_yearmon() +
+  labs(title="College Quality Rankings - Monthly Aggregate",
+       subtitle="",
+       x="Time",
+       y="Quality") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "bottom") 
+ggsave("plot_pooled_online.png")
