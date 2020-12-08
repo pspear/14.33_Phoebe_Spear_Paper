@@ -75,6 +75,36 @@ eststo d_fully_online
 *.txt file, TeX format
 esttab q_fully_online d_fully_online using quality_regression.txt, se lab title("Effect of Online Class on Quality Ratings received by Professors")  tex replace
 
+
+
+//test online lerarning on number of reviews
+tabulate post_covid collegemodel, row  
+tabout post_covid collegemodel using online_review.tex, replace style(tex) font(bold)
+
+
+//regress fully-online/primarily-online aginst primarily-in-person
+
+gen online = 1 if (collegemodel == "Primarily online" | collegemodel == "Fully online")
+
+replace online = 0 if collegemodel == "Primarily in person"
+
+gen online_post = online*post_covid
+
+reg quality online post_covid online_post tid tnumratings class_group grade_group known_cases_post, robust cluster(sid)
+
+eststo q_online_pooled
+
+reg difficulty online post_covid c tid tnumratings class_group grade_group known_cases_post, robust cluster(sid)
+
+eststo d_online_pooled
+
+*.txt file, TeX format
+esttab q_online_pooled d_online_pooled using pooled_regression.txt, se lab title("Effect of Online Class on Quality Ratings received by Professors")  tex replace
+
+
+reg tid online post_covid online_post
+
+
 // esttab d_fully_online d_online d_online_hybrid using difficulty_regression.txt, se lab title("Effect of Online Class on Difficulty Ratings received by Professors") mtitles("Fully Online vs. In-Person" "Fully/Primarily Online vs. In-Person" "Fully/Primarily Online vs. Hybrid/In-Person") tex replace 
 
 
